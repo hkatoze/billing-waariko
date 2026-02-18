@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  companyId String
+
+  type      ClientType
+  name      String
+  countryCode   String
+
+  sector    String?
+  email     String?
+  phone     String?
+  address   String?
+
+  legalInfo   ClientLegalInfo?
+  contacts    ClientContact[]
+  projects    Project[]
+  invoices    Invoice[]
+
+  deletedAt DateTime?
+  deletedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([companyId, name])
+  @@index([deletedAt])
+}
+
+
+
+model ClientLegalInfo {
+  id        String  @id @default(uuid())
+  clientId  String  @unique
+
+  rccm      String?
+  ifu       String?
+  vatNumber String?
+
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model ClientContact {
+  id        String  @id @default(uuid())
+  clientId  String
+
+  name      String
+  email     String?
+  phone     String?
+  jobTitle  String?
+
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+
+enum ClientType {
+  COMPANY
+  INDIVIDUAL
+}
+
+
+enum ProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+
+model Project {
+  id        String   @id @default(uuid())
+  companyId String
+  clientId  String
+
+  name        String
+  description String?
+
+  status      ProjectStatus @default(DRAFT)
+
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([deletedAt])
+  @@index([companyId, clientId])
+}
+
+
+enum InvoiceType {
+  PROFORMA
+  FINAL
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VALIDATED
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum InvoiceCategory {
+  STANDARD
+  DEPOSIT      // facture d’acompte
+  BALANCE      // facture de reliquat
+}
+
+enum SettlementType {
+  BANK_TRANSFER
+  CASH
+  CHECK
+  MOBILE_MONEY
+}
+model Invoice {
+  id        String   @id @default(uuid())
+  companyId String
+  projectId String
+  clientId  String
+
+  // Nature
+  type       InvoiceType
+  category   InvoiceCategory @default(STANDARD)
+  status     InvoiceStatus   @default(DRAFT)
+
+  // Numérotation
+  number     String?   // null si proforma
+  reference  String?   // ex PF-2026-001
+
+  // Montants calculés
+  subtotal        Float
+  discountAmount  Float   @default(0)
+  discountRate    Float?  // % optionnel
+
+  taxRate         Float?  // % TVA
+  taxAmount       Float   @default(0)
+
+  total           Float
+
+  // Dates
+  issuedAt   DateTime @default(now())
+  dueDate    DateTime?
+
+  // Paiement
+  settlementType SettlementType?
+
+  // Remarques
+  notes        String?
+  internalNote String?
+
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  items     InvoiceItem[]
+ 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([projectId])
+}
+model InvoiceItem {
+  id        String  @id @default(uuid())
+  invoiceId String
+
+  description String
+  quantity    Float
+  unitPrice   Float
+
+  discountRate Float?   // remise ligne (%)
+  discountAmount Float? // remise ligne fixe
+
+  taxRate     Float?    // TVA ligne
+
+  subtotal    Float
+  total       Float
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId])
+}
