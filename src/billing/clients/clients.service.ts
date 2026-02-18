@@ -20,13 +20,14 @@ export class ClientsService {
     });
   }
 
-  async findAll(companyId: string) {
+  async findAll(companyId: string, limit?: number) {
     return this.prisma.client.findMany({
       where: {
         companyId,
         deletedAt: null,
       },
       orderBy: { createdAt: 'desc' },
+      take: limit,
     });
   }
 
