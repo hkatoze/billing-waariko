@@ -26,8 +26,8 @@ export class ClientsController {
   }
 
   @Get()
-  findAll(@Req() req, @Body() limit?: number) {
-    return this.clientsService.findAll(req.companyId,limit);
+  findAll(@Req() req) {
+    return this.clientsService.findAll(req.companyId);
   }
 
   @Get('trash')
