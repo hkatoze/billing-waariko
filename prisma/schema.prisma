@@ -20,8 +20,14 @@ model Client {
   phone     String?
   address   String?
 
-  legalInfo   ClientLegalInfo?
-  contacts    ClientContact[]
+  legalInfo   String?
+
+  internalContactName      String?
+  internalContactEmail     String?
+  internalContactPhone     String?
+  internalContactJobTitle  String?
+
+
   projects    Project[]
   invoices    Invoice[]
 
@@ -38,38 +44,9 @@ model Client {
 
 
 
-model ClientLegalInfo {
-  id        String  @id @default(uuid())
-  clientId  String  @unique
+ 
 
-  rccm      String?
-  ifu       String?
-  vatNumber String?
-
-  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
-model ClientContact {
-  id        String  @id @default(uuid())
-  clientId  String
-
-  name      String
-  email     String?
-  phone     String?
-  jobTitle  String?
-
-  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([clientId])
-}
-
+ 
 
 enum ClientType {
   COMPANY

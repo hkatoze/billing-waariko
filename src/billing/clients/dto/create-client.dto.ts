@@ -7,29 +7,54 @@ import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validat
  }
 
  export class CreateClientDto {
-   @IsEnum(ClientType)
-   type: ClientType;
+@IsEnum(ClientType)
+type: ClientType;
 
-   @IsString()
-   @IsNotEmpty()
-   name: string;
+@IsString()
+@IsNotEmpty()
+name: string;
 
-   @IsString()
-   countryCode: string;
+@IsString()
+countryCode: string;
 
-   @IsOptional()
-   @IsString()
-   sector?: string;
+@IsOptional()
+@IsString()
+sector?: string;
 
-   @IsOptional()
-   @IsEmail()
-   email?: string;
+@IsOptional()
+@IsEmail()
+email?: string;
 
-   @IsOptional()
-   @IsString()
-   phone?: string;
 
-   @IsOptional()
-   @IsString()
-   address?: string;
+@IsOptional()
+@IsString()
+legalInfo?: string;
+
+
+@IsOptional()
+@IsString()
+internalContactName?: string;
+
+@IsOptional()
+@IsString()
+internalContactEmail?: string;
+
+@IsOptional()
+@IsString()
+internalContactPhone?: string;
+
+@IsOptional()
+@IsString()
+internalContactJobTitle?: string;
+
+@IsOptional()
+@IsString()
+phone?: string;
+
+@IsOptional()
+@IsString()
+address?: string;
  }
+
+
+   
