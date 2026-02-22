@@ -56,6 +56,7 @@ enum ClientType {
 enum ProjectStatus {
   DRAFT
   IN_PROGRESS
+  VALIDATED
   COMPLETED
   CANCELLED
 }
