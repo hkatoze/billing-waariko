@@ -48,7 +48,7 @@ export class ProjectsController {
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req) {
-    return this.projectsService.softDelete(req.companyId, id, req.user.sub);
+    return this.projectsService.softDelete(req.companyId, id, req.user?.sub);
   }
 
   @Post(':id/restore')
