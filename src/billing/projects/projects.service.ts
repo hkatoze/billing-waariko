@@ -4,7 +4,6 @@ import { CreateProjectDto } from './dto/createProjectDto.dto';
 import { UpdateProjectDto } from './dto/updateProjectDto.dto';
  
  
-
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
