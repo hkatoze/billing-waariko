@@ -2,8 +2,11 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuard
 import { CompanyGuard } from '../company.guard';
  
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/createProjectDto.dto';
-import { UpdateProjectDto } from './dto/updateProjectDto.dto';
+import { CreateProjectDto } from './dtos/createProjectDto.dto';
+import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
+ 
+ 
+ 
 
 @UseGuards(CompanyGuard)
 @Controller('projects')
