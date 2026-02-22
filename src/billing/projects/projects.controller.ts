@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { CompanyGuard } from '../company.guard';
-import { CreateProjectDto } from './dto/CreateProjectDto.dto';
-import { UpdateProjectDto } from './dto/UpdateProjectDto.dto';
+ 
 import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/createProjectDto.dto';
+import { UpdateProjectDto } from './dto/updateProjectDto.dto';
 
 @UseGuards(CompanyGuard)
 @Controller('projects')
