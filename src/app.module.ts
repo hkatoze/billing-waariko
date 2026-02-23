@@ -15,7 +15,7 @@ import { InvoicesModule } from './billing/invoices/invoices.module';
     }),
     InvoicesModule,
   ],
-  controllers: [AppController, InvoicesController],
+  controllers: [AppController],
   providers: [AppService],
 })
 

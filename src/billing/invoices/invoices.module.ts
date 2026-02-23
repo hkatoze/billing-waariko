@@ -8,7 +8,6 @@ import { InvoicesService } from './invoices.service';
   imports: [PrismaModule],
   controllers: [InvoicesController],
   providers: [InvoicesService],
-
-  exports: [InvoicesService, InvoicesController],
+  exports: [InvoicesService],
 })
 export class InvoicesModule {}
