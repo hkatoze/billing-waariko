@@ -169,13 +169,7 @@ model InvoiceItem {
   description String
   quantity    Float
   unitPrice   Float
-
-  discountRate Float?   // remise ligne (%)
-  discountAmount Float? // remise ligne fixe
-
-  taxRate     Float?    // TVA ligne
-
-  subtotal    Float
+ 
   total       Float
 
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)

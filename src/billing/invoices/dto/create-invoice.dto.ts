@@ -1,73 +1,48 @@
 import {
   IsEnum,
   IsOptional,
-  IsNumber,
   IsString,
   IsDateString,
   IsArray,
   ValidateNested,
+  IsNumber,
   Min,
-  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export class CreateInvoiceItemDto {
-  @IsString()
-  description: string;
-
-  @IsNumber()
-  @Min(0)
-  quantity: number;
-
-  @IsNumber()
-  @Min(0)
-  unitPrice: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  discountRate?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  discountAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  taxRate?: number;
-}
+import { CreateInvoiceItemDto } from './create-invoice-item.dto';
+import { InvoiceType, InvoiceCategory, SettlementType } from '@prisma/client';
+import { CreateProjectDto } from 'src/billing/projects/dtos/createProjectDto.dto';
+import { CreateClientDto } from 'src/billing/clients/dto/create-client.dto';
 
 export class CreateInvoiceDto {
   @IsOptional()
-  @IsEnum(['PROFORMA', 'FINAL', 'DELIVERY_NOTE'])
-  type?: string;
+  @IsEnum(InvoiceType)
+  type?: InvoiceType;
+
+  @IsNumber()
+  @Min(0)
+  total?: number;
+
+  @IsNumber()
+  @Min(0)
+  subtotal?: number;
 
   @IsOptional()
-  @IsEnum(['STANDARD', 'DEPOSIT', 'BALANCE'])
-  category?: string;
+  @IsEnum(InvoiceCategory)
+  category?: InvoiceCategory;
+
+  // Numérotation auto côté backend
+  @IsOptional()
+  @IsString()
+  reference?: string;
 
   @IsOptional()
   @IsDateString()
   dueDate?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  discountRate?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  discountAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  taxRate?: number;
+  @IsEnum(SettlementType)
+  settlementType?: SettlementType;
 
   @IsOptional()
   @IsString()
@@ -77,8 +52,19 @@ export class CreateInvoiceDto {
   @IsString()
   internalNote?: string;
 
+  @IsOptional()
+  @Type(() => CreateProjectDto)
+  project?: CreateProjectDto;
+
+  @IsOptional()
+  @Type(() => CreateClientDto)
+  client?: CreateClientDto;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateInvoiceItemDto)
   items: CreateInvoiceItemDto[];
 }
+
+
+   

@@ -6,13 +6,14 @@ import {
   IsUUID,
 } from 'class-validator';
 
-export enum ProjectStatus {
-  DRAFT = 'DRAFT',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-}
-
+ export enum ProjectStatus {
+   IN_PROGRESS = 'IN_PROGRESS',
+   COMPLETED = 'COMPLETED',
+   CANCELLED = 'CANCELLED',
+   DRAFT = 'DRAFT',   
+   VALIDATED = 'VALIDATED'
+    
+ }
 export class CreateProjectDto {
   @IsUUID()
   clientId: string;
@@ -22,6 +23,13 @@ export class CreateProjectDto {
   name: string;
 
   @IsOptional()
+  @IsEnum(ProjectStatus)
+  status?: ProjectStatus;
+
+  @IsOptional()
   @IsString()
   description?: string;
 }
+
+
+ 

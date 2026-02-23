@@ -7,6 +7,7 @@ import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
  
  
  
+ 
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
@@ -97,10 +98,10 @@ export class ProjectsService {
     const project = await this.findOne(companyId, id);
 
     // Empêcher suppression si facture VALIDATED
-    const validatedInvoice = await this.prisma.invoice.findFirst({
+    const validatedInvoice = await this.prisma.project.findFirst({
       where: {
-        projectId: id,
-        status: { in: ['VALIDATED', 'PAID'] },
+        id: id,
+        status: { in: ['VALIDATED', 'COMPLETED'] },
       },
     });
 
@@ -161,8 +162,9 @@ export class ProjectsService {
     await this.prisma.$transaction(async (tx) => {
       await tx.invoice.create({
         data: {
+            ...dto,
           companyId,
-         ...dto
+       
         },
       });
 
