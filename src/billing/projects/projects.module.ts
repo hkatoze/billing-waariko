@@ -5,8 +5,9 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { InvoicesModule } from '../invoices/invoices.module';
 
 @Module({
-  imports: [PrismaModule,InvoicesModule],
+  imports: [PrismaModule, InvoicesModule],
   controllers: [ProjectsController],
-  providers: [ProjectsService]
+  providers: [ProjectsService],
+
 })
 export class ProjectsModule {}
