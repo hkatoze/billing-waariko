@@ -11,8 +11,4 @@ export class CreateInvoiceItemDto {
   @IsNumber()
   @Min(0)
   unitPrice: number;
-
-  @IsNumber()
-  @Min(0)
-  total: number;
 }

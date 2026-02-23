@@ -4,10 +4,6 @@ import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
 import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
  
- 
- 
- 
- 
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
@@ -27,7 +23,7 @@ export class ProjectsService {
     return this.prisma.project.create({
       data: {
         companyId,
-        ...dto
+        ...dto,
       },
     });
   }
@@ -73,10 +69,6 @@ export class ProjectsService {
         id,
         companyId,
         deletedAt: null,
-      },
-      include: {
-        client: true,
-        invoices: true,
       },
     });
 
@@ -153,23 +145,49 @@ export class ProjectsService {
     });
   }
 
-  async createProforma(companyId: string, id: string, dto: CreateInvoiceDto) {
-    const project = await this.findOne(companyId, id);
+  async createProforma(
+    companyId: string,
+    projectId: string,
+    dto: CreateInvoiceDto,
+  ) {
+    const project = await this.findOne(companyId, projectId);
 
-    if (project.status !== 'DRAFT')
+    if (project.status !== 'DRAFT') {
       throw new ForbiddenException('Invalid project state');
+    }
 
     await this.prisma.$transaction(async (tx) => {
+      // 🔹 Calcul des items
+      const items = dto.items.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.quantity * item.unitPrice,
+      }));
+
+      const subtotal = items.reduce((a, b) => a + b.total, 0);
+
       await tx.invoice.create({
         data: {
-            ...dto,
           companyId,
-       
+          projectId,
+          clientId: project.clientId, 
+          type: 'PROFORMA',
+          category: dto.category ?? 'STANDARD',
+          subtotal,
+          total: subtotal,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+          settlementType: dto.settlementType,
+          notes: dto.notes,
+          internalNote: dto.internalNote,
+          items: {
+            create: items,
+          },
         },
       });
 
       await tx.project.update({
-        where: { id },
+        where: { id: projectId },
         data: { status: 'IN_PROGRESS' },
       });
     });
@@ -192,18 +210,20 @@ export class ProjectsService {
       await tx.invoice.create({
         data: {
           companyId,
+          clientId: project.clientId,
           projectId: id,
           type: 'FINALL',
-          subtotal: 0,
         },
       });
 
       await tx.invoice.create({
         data: {
           companyId,
+          clientId: project.clientId,
           projectId: id,
           type: 'DELIVERY_NOTE',
           subtotal: 0,
+          total: 0,
         },
       });
     });
@@ -230,3 +250,6 @@ export class ProjectsService {
     });
   }
 }
+
+
+

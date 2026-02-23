@@ -126,14 +126,14 @@ model Invoice {
   reference  String?   // ex PF-2026-001
 
   // Montants calculés
-  subtotal        Float
+  subtotal        Float?   @default(0)
   discountAmount  Float   @default(0)
   discountRate    Float?  // % optionnel
 
   taxRate         Float?  // % TVA
   taxAmount       Float   @default(0)
 
-  total           Float
+  total           Float?   @default(0)
 
   // Dates
   issuedAt   DateTime @default(now())
@@ -146,9 +146,7 @@ model Invoice {
   notes        String?
   internalNote String?
 
-  // Relations
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
 
   items     InvoiceItem[]
  
@@ -159,6 +157,12 @@ model Invoice {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client    Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  
   @@index([companyId])
   @@index([projectId])
 }
@@ -170,7 +174,7 @@ model InvoiceItem {
   quantity    Float
   unitPrice   Float
  
-  total       Float
+  total       Float @default(0)
 
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
