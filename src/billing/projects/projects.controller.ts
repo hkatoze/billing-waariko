@@ -4,6 +4,7 @@ import { CompanyGuard } from '../company.guard';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
+import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
  
  
  
@@ -54,5 +55,33 @@ export class ProjectsController {
   @Post(':id/restore')
   restore(@Param('id') id: string, @Req() req) {
     return this.projectsService.restore(req.companyId, id);
+  }
+
+  // CREATE PROFORMA
+  @Post(':id/proforma')
+  createProforma(
+    @Param('id') id: string,
+    @Body() dto: CreateInvoiceDto,
+    @Req() req,
+  ) {
+    return this.projectsService.createProforma(req.companyId, id, dto);
+  }
+
+  // VALIDATE PROJECT
+  @Post(':id/validate')
+  validate(@Param('id') id: string, @Req() req) {
+    return this.projectsService.validate(req.companyId, id);
+  }
+
+  // MARK PAID
+  @Post(':id/mark-paid')
+  markPaid(@Param('id') id: string, @Req() req) {
+    return this.projectsService.markPaid(req.companyId, id);
+  }
+
+  // GET PROJECT INVOICES
+  @Get(':id/invoices')
+  getInvoices(@Param('id') id: string, @Req() req) {
+    return this.projectsService.getInvoices(req.companyId, id);
   }
 }

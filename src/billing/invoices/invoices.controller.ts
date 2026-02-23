@@ -1,36 +1,42 @@
 import {
   Controller,
   Get,
-  Headers,
-  UnauthorizedException,
+  Delete,
+  Post,
+  Param,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { InvoicesService } from './invoices.service';
+import { CompanyGuard } from '../company.guard';
+ 
 
+@UseGuards(CompanyGuard)
 @Controller('invoices')
 export class InvoicesController {
-  @Get()
-  findAll(
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user') user: any,
-  ) {
-    if (!companyId) {
-      throw new UnauthorizedException('Missing companyId');
-    }
+  constructor(private readonly invoicesService: InvoicesService) {}
 
-    if (!user || !user.companies) {
-      throw new UnauthorizedException('User not authenticated');
-    }
+  // GET ONE
+  @Get(':id')
+  findOne(@Param('id') id: string, @Req() req) {
+    return this.invoicesService.findOne(req.companyId, id);
+  }
 
-    const hasAccess = user.companies.some(
-      (c: any) => c.companyId === companyId,
-    );
+  // DELETE (soft)
+  @Delete(':id')
+  remove(@Param('id') id: string, @Req() req) {
+    return this.invoicesService.softDelete(req.companyId, id, req.user.sub);
+  }
 
-    if (!hasAccess) {
-      throw new UnauthorizedException('Access denied to this company');
-    }
+  // RESTORE
+  @Post(':id/restore')
+  restore(@Param('id') id: string, @Req() req) {
+    return this.invoicesService.restore(req.companyId, id);
+  }
 
-    return {
-      message: 'Invoices fetched successfully',
-      companyId,
-    };
+  // TRASH
+  @Get('trash')
+  trash(@Req() req) {
+    return this.invoicesService.trash(req.companyId);
   }
 }

@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
+import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
  
  
  
@@ -25,9 +26,7 @@ export class ProjectsService {
     return this.prisma.project.create({
       data: {
         companyId,
-        clientId: dto.clientId,
-        name: dto.name,
-        description: dto.description,
+        ...dto
       },
     });
   }
@@ -150,6 +149,82 @@ export class ProjectsService {
         NOT: { deletedAt: null },
       },
       orderBy: { deletedAt: 'desc' },
+    });
+  }
+
+  async createProforma(companyId: string, id: string, dto: CreateInvoiceDto) {
+    const project = await this.findOne(companyId, id);
+
+    if (project.status !== 'DRAFT')
+      throw new ForbiddenException('Invalid project state');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.invoice.create({
+        data: {
+          companyId,
+         ...dto
+        },
+      });
+
+      await tx.project.update({
+        where: { id },
+        data: { status: 'IN_PROGRESS' },
+      });
+    });
+
+    return { message: 'Proforma created' };
+  }
+
+  async validate(companyId: string, id: string) {
+    const project = await this.findOne(companyId, id);
+
+    if (project.status !== 'IN_PROGRESS')
+      throw new ForbiddenException('Invalid state');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.project.update({
+        where: { id },
+        data: { status: 'VALIDATED' },
+      });
+
+      await tx.invoice.create({
+        data: {
+          companyId,
+          projectId: id,
+          type: 'FINALL',
+          subtotal: 0,
+        },
+      });
+
+      await tx.invoice.create({
+        data: {
+          companyId,
+          projectId: id,
+          type: 'DELIVERY_NOTE',
+          subtotal: 0,
+        },
+      });
+    });
+
+    return { message: 'Project validated' };
+  }
+
+  async markPaid(companyId: string, id: string) {
+    const project = await this.findOne(companyId, id);
+
+    if (project.status !== 'VALIDATED')
+      throw new ForbiddenException('Invalid state');
+
+    return this.prisma.project.update({
+      where: { id },
+      data: { status: 'COMPLETED' },
+    });
+  }
+
+  async getInvoices(companyId: string, id: string) {
+    return this.prisma.invoice.findMany({
+      where: { companyId, projectId: id, deletedAt: null },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }

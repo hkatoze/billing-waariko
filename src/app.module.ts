@@ -5,6 +5,7 @@ import { BillingModule } from './billing/billing.module';
 import { InvoicesController } from './billing/invoices/invoices.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CompanyRequiredMiddleware } from './middleware/company-required.middleware';
+import { InvoicesModule } from './billing/invoices/invoices.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CompanyRequiredMiddleware } from './middleware/company-required.middlew
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    InvoicesModule,
   ],
   controllers: [AppController, InvoicesController],
   providers: [AppService],
