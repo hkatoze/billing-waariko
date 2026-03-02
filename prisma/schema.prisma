@@ -129,11 +129,10 @@ model Invoice {
   subtotal        Float?   @default(0)
   discountAmount  Float   @default(0)
   discountRate    Float?  // % optionnel
-
   taxRate         Float?  // % TVA
   taxAmount       Float   @default(0)
-
   total           Float?   @default(0)
+  paimentModality           Float?   @default(0)
 
   // Dates
   issuedAt   DateTime @default(now())
