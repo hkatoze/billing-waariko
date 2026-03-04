@@ -35,9 +35,7 @@ export class ProjectsService {
         deletedAt: null,
       },
       include: {
-        client: {
-          select: { id: true, name: true },
-        },
+        client: true,
       },
       orderBy: { createdAt: 'desc' },
     });
