@@ -48,6 +48,7 @@ export class ProjectsService {
         companyId,
         deletedAt: null,
       },
+      
     });
 
     if (!client) throw new NotFoundException('Client not found');
@@ -57,6 +58,9 @@ export class ProjectsService {
         companyId,
         clientId,
         deletedAt: null,
+      },
+      include: {
+        client: true,
       },
       orderBy: { createdAt: 'desc' },
     });
