@@ -28,10 +28,7 @@ export class ProjectsController {
     return this.projectsService.findAll(req.companyId);
   }
 
-  @Get(':clientId/projects')
-  getClientProjects(@Param('clientId') clientId: string, @Req() req) {
-    return this.projectsService.findByClient(req.companyId, clientId);
-  }
+  
   @Get('trash')
   trash(@Req() req) {
     return this.projectsService.trash(req.companyId);
