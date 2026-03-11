@@ -25,6 +25,9 @@ export class ProjectsService {
         companyId,
         ...dto,
       },
+      include: {
+        client: true,
+      },
     });
   }
 
@@ -85,6 +88,9 @@ export class ProjectsService {
     return this.prisma.project.update({
       where: { id },
       data: dto,
+      include: {
+        client: true,
+      },
     });
   }
 
