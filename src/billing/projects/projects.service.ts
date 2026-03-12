@@ -225,6 +225,28 @@ export class ProjectsService {
     });
     return { message: 'Proforma created' };
   }
+  async getProformaItems(
+    companyId: string,
+    projectId: string,
+    invoiceId: string,
+  ) {
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        projectId,
+        companyId,
+        deletedAt: null,
+      },
+    });
+
+    if (!invoice) throw new NotFoundException('Facture introuvable');
+
+    return this.prisma.invoiceItem.findMany({
+      where: { invoiceId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   async updateProforma(
     companyId: string,
     projectId: string,

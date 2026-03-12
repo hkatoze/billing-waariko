@@ -5,6 +5,7 @@ import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
 import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
+import { UpdateInvoiceDto } from '../invoices/dto/update-invoice.dto';
  
  
  
@@ -28,7 +29,6 @@ export class ProjectsController {
     return this.projectsService.findAll(req.companyId);
   }
 
-  
   @Get('trash')
   trash(@Req() req) {
     return this.projectsService.trash(req.companyId);
@@ -63,7 +63,32 @@ export class ProjectsController {
   ) {
     return this.projectsService.createProforma(req.companyId, id, dto);
   }
-
+  @Patch(':id/proforma/:invoiceId')
+  updateProforma(
+    @Param('id') projectId: string,
+    @Param('invoiceId') invoiceId: string,
+    @Body() dto: UpdateInvoiceDto,
+    @Req() req,
+  ) {
+    return this.projectsService.updateProforma(
+      req.companyId,
+      projectId,
+      invoiceId,
+      dto,
+    );
+  }
+  @Get(':id/invoices/:invoiceId/items')
+  getProformaItems(
+    @Param('id') projectId: string,
+    @Param('invoiceId') invoiceId: string,
+    @Req() req,
+  ) {
+    return this.projectsService.getProformaItems(
+      req.companyId,
+      projectId,
+      invoiceId,
+    );
+  }
   // VALIDATE PROJECT
   @Post(':id/validate')
   validate(@Param('id') id: string, @Req() req) {
