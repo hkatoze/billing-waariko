@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
 import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
+import { UpdateInvoiceDto } from '../invoices/dto/update-invoice.dto';
  
 @Injectable()
 export class ProjectsService {
@@ -51,7 +52,6 @@ export class ProjectsService {
         companyId,
         deletedAt: null,
       },
-      
     });
 
     if (!client) throw new NotFoundException('Client not found');
@@ -179,7 +179,7 @@ export class ProjectsService {
         data: {
           companyId,
           projectId,
-          clientId: project.clientId, 
+          clientId: project.clientId,
           type: 'PROFORMA',
           category: dto.category ?? 'STANDARD',
           subtotal,
@@ -202,7 +202,66 @@ export class ProjectsService {
 
     return { message: 'Proforma created' };
   }
-
+  async updateProforma(
+    companyId: string,
+    projectId: string,
+    invoiceId: string,
+    dto: UpdateInvoiceDto,
+  ) {
+    const project = await this.findOne(companyId, projectId);
+    if (project.status !== 'IN_PROGRESS') {
+      throw new ForbiddenException(
+        'Seule une proforma en cours peut être modifiée',
+      );
+    }
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        projectId,
+        companyId,
+        type: 'PROFORMA',
+        deletedAt: null,
+      },
+    });
+    if (!invoice) throw new NotFoundException('Proforma introuvable');
+    return this.prisma.$transaction(async (tx) => {
+      if (dto.items && dto.items.length > 0) {
+        // Supprime les anciens items et recrée
+        await tx.invoiceItem.deleteMany({ where: { invoiceId } });
+        const items = dto.items.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.quantity * item.unitPrice,
+        }));
+        const subtotal = items.reduce((a, b) => a + b.total, 0);
+        return tx.invoice.update({
+          where: { id: invoiceId },
+          data: {
+            category: dto.category ?? invoice.category,
+            subtotal,
+            total: subtotal,
+            dueDate: dto.dueDate ? new Date(dto.dueDate) : invoice.dueDate,
+            settlementType: dto.settlementType ?? invoice.settlementType,
+            notes: dto.notes ?? invoice.notes,
+            items: {
+              create: items,
+            },
+          },
+        });
+      }
+      // Mise à jour sans toucher aux items
+      return tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          category: dto.category ?? invoice.category,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : invoice.dueDate,
+          settlementType: dto.settlementType ?? invoice.settlementType,
+          notes: dto.notes ?? invoice.notes,
+        },
+      });
+    });
+  }
   async validate(companyId: string, id: string) {
     const project = await this.findOne(companyId, id);
 

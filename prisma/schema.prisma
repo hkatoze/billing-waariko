@@ -122,8 +122,12 @@ model Invoice {
   
 
   // Numérotation
-  number     String?   // null si proforma
-  reference  String?   // ex PF-2026-001
+  number     String?
+  reference  String?
+ 
+  // Contrainte d'unicité par company
+  @@unique([companyId, number])
+  @@unique([companyId, reference])
 
   // Montants calculés
   subtotal        Float?   @default(0)
