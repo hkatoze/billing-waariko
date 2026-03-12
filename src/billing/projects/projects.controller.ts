@@ -67,7 +67,7 @@ export class ProjectsController {
   updateProforma(
     @Param('id') projectId: string,
     @Param('invoiceId') invoiceId: string,
-    @Body() dto: UpdateInvoiceDto,
+    @Body() dto: CreateInvoiceDto,
     @Req() req,
   ) {
     return this.projectsService.updateProforma(

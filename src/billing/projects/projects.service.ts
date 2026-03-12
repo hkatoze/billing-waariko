@@ -193,7 +193,18 @@ export class ProjectsService {
         total: item.quantity * item.unitPrice,
       }));
       const subtotal = items.reduce((a, b) => a + b.total, 0);
-      // Génération du numéro unique
+      // Remise
+      const discountRate = dto.discountRate ?? 0;
+      const discountAmount =
+        dto.discountAmount ?? (subtotal * discountRate) / 100;
+      const totalAfterDiscount = subtotal - discountAmount;
+      // TVA
+      const taxRate = dto.taxRate ?? 0;
+      const taxAmount = dto.taxAmount ?? (totalAfterDiscount * taxRate) / 100;
+      // Total TTC
+      const total = totalAfterDiscount + taxAmount;
+      // Modalité de paiement
+      const paimentModality = dto.paimentModality ?? total;
       const { number, reference } = await this.generateProformaNumber(
         companyId,
         tx,
@@ -208,7 +219,12 @@ export class ProjectsService {
           number,
           reference,
           subtotal,
-          total: subtotal,
+          discountAmount,
+          discountRate: discountRate > 0 ? discountRate : null,
+          taxRate: taxRate > 0 ? taxRate : null,
+          taxAmount,
+          total,
+          paimentModality,
           dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
           settlementType: dto.settlementType,
           notes: dto.notes,
@@ -224,6 +240,86 @@ export class ProjectsService {
       });
     });
     return { message: 'Proforma created' };
+  }
+  async updateProforma(
+    companyId: string,
+    projectId: string,
+    invoiceId: string,
+    dto: CreateInvoiceDto,
+  ) {
+    const project = await this.findOne(companyId, projectId);
+    if (project.status !== 'IN_PROGRESS') {
+      throw new ForbiddenException(
+        'Seule une proforma en cours peut être modifiée',
+      );
+    }
+    const invoice = await this.prisma.invoice.findFirst({
+      where: {
+        id: invoiceId,
+        projectId,
+        companyId,
+        type: 'PROFORMA',
+        deletedAt: null,
+      },
+    });
+    if (!invoice) throw new NotFoundException('Proforma introuvable');
+    return this.prisma.$transaction(async (tx) => {
+      let subtotal = invoice.subtotal ?? 0;
+      let itemsToCreate: any[] = [];
+      const hasNewItems = dto.items && dto.items.length > 0;
+      if (hasNewItems) {
+        await tx.invoiceItem.deleteMany({ where: { invoiceId } });
+        itemsToCreate = dto.items!.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.quantity * item.unitPrice,
+        }));
+        subtotal = itemsToCreate.reduce((a, b) => a + b.total, 0);
+      }
+      // Remise
+      const discountRate = dto.discountRate ?? invoice.discountRate ?? 0;
+      const discountAmount =
+        dto.discountAmount !== undefined
+          ? dto.discountAmount
+          : dto.discountRate !== undefined
+            ? (subtotal * discountRate) / 100
+            : (invoice.discountAmount ?? 0);
+      const totalAfterDiscount = subtotal - discountAmount;
+      // TVA
+      const taxRate = dto.taxRate ?? invoice.taxRate ?? 0;
+      const taxAmount =
+        dto.taxAmount !== undefined
+          ? dto.taxAmount
+          : dto.taxRate !== undefined
+            ? (totalAfterDiscount * taxRate) / 100
+            : (invoice.taxAmount ?? 0);
+      // Total TTC
+      const total = totalAfterDiscount + taxAmount;
+      // Modalité de paiement
+      const paimentModality =
+        dto.paimentModality !== undefined ? dto.paimentModality : total;
+      return tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          category: dto.category ?? invoice.category,
+          subtotal,
+          discountAmount,
+          discountRate: discountRate > 0 ? discountRate : null,
+          taxRate: taxRate > 0 ? taxRate : null,
+          taxAmount,
+          total,
+          paimentModality,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : invoice.dueDate,
+          settlementType: dto.settlementType ?? invoice.settlementType,
+          notes: dto.notes ?? invoice.notes,
+          internalNote: dto.internalNote ?? invoice.internalNote,
+          ...(hasNewItems && {
+            items: { create: itemsToCreate },
+          }),
+        },
+      });
+    });
   }
   async getProformaItems(
     companyId: string,
@@ -247,66 +343,6 @@ export class ProjectsService {
     });
   }
 
-  async updateProforma(
-    companyId: string,
-    projectId: string,
-    invoiceId: string,
-    dto: UpdateInvoiceDto,
-  ) {
-    const project = await this.findOne(companyId, projectId);
-    if (project.status !== 'IN_PROGRESS') {
-      throw new ForbiddenException(
-        'Seule une proforma en cours peut être modifiée',
-      );
-    }
-    const invoice = await this.prisma.invoice.findFirst({
-      where: {
-        id: invoiceId,
-        projectId,
-        companyId,
-        type: 'PROFORMA',
-        deletedAt: null,
-      },
-    });
-    if (!invoice) throw new NotFoundException('Proforma introuvable');
-    return this.prisma.$transaction(async (tx) => {
-      if (dto.items && dto.items.length > 0) {
-        // Supprime les anciens items et recrée
-        await tx.invoiceItem.deleteMany({ where: { invoiceId } });
-        const items = dto.items.map((item) => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          total: item.quantity * item.unitPrice,
-        }));
-        const subtotal = items.reduce((a, b) => a + b.total, 0);
-        return tx.invoice.update({
-          where: { id: invoiceId },
-          data: {
-            category: dto.category ?? invoice.category,
-            subtotal,
-            total: subtotal,
-            dueDate: dto.dueDate ? new Date(dto.dueDate) : invoice.dueDate,
-            settlementType: dto.settlementType ?? invoice.settlementType,
-            notes: dto.notes ?? invoice.notes,
-            items: {
-              create: items,
-            },
-          },
-        });
-      }
-      // Mise à jour sans toucher aux items
-      return tx.invoice.update({
-        where: { id: invoiceId },
-        data: {
-          category: dto.category ?? invoice.category,
-          dueDate: dto.dueDate ? new Date(dto.dueDate) : invoice.dueDate,
-          settlementType: dto.settlementType ?? invoice.settlementType,
-          notes: dto.notes ?? invoice.notes,
-        },
-      });
-    });
-  }
   async validate(companyId: string, id: string) {
     const project = await this.findOne(companyId, id);
 
