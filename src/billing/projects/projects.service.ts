@@ -4,6 +4,7 @@ import { CreateProjectDto } from './dtos/createProjectDto.dto';
 import { UpdateProjectDto } from './dtos/updateProjectDto.dto';
 import { CreateInvoiceDto } from '../invoices/dto/create-invoice.dto';
 import { UpdateInvoiceDto } from '../invoices/dto/update-invoice.dto';
+import { Prisma } from '@prisma/client';
  
 @Injectable()
 export class ProjectsService {
@@ -153,28 +154,50 @@ export class ProjectsService {
     });
   }
 
+  private async generateProformaNumber(
+    companyId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<{ number: string; reference: string }> {
+    const year = new Date().getFullYear();
+    // Compte les proformas existantes pour cette company cette année
+    const count = await tx.invoice.count({
+      where: {
+        companyId,
+        type: 'PROFORMA',
+        createdAt: {
+          gte: new Date(`${year}-01-01`),
+          lt: new Date(`${year + 1}-01-01`),
+        },
+      },
+    });
+    const sequence = String(count + 1).padStart(4, '0');
+    const number = `${year}-${sequence}`; // ex: 2026-0001
+    const reference = `PF-${year}-${sequence}`; // ex: PF-2026-0001
+    return { number, reference };
+  }
+
   async createProforma(
     companyId: string,
     projectId: string,
     dto: CreateInvoiceDto,
   ) {
     const project = await this.findOne(companyId, projectId);
-
     if (project.status !== 'DRAFT') {
       throw new ForbiddenException('Invalid project state');
     }
-
     await this.prisma.$transaction(async (tx) => {
-      // 🔹 Calcul des items
       const items = dto.items.map((item) => ({
         description: item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.quantity * item.unitPrice,
       }));
-
       const subtotal = items.reduce((a, b) => a + b.total, 0);
-
+      // Génération du numéro unique
+      const { number, reference } = await this.generateProformaNumber(
+        companyId,
+        tx,
+      );
       await tx.invoice.create({
         data: {
           companyId,
@@ -182,6 +205,8 @@ export class ProjectsService {
           clientId: project.clientId,
           type: 'PROFORMA',
           category: dto.category ?? 'STANDARD',
+          number,
+          reference,
           subtotal,
           total: subtotal,
           dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
@@ -193,13 +218,11 @@ export class ProjectsService {
           },
         },
       });
-
       await tx.project.update({
         where: { id: projectId },
         data: { status: 'IN_PROGRESS' },
       });
     });
-
     return { message: 'Proforma created' };
   }
   async updateProforma(
